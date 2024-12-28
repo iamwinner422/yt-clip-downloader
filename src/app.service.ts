@@ -240,7 +240,7 @@ export class AppService {
     private async getYoutubeCookies(){
         try{
             
-            //const response = await axios.get('https://www.youtube.com');
+            const response = await axios.get('https://www.youtube.com');
         
         
             const cookieJar = new tough.CookieJar();
