@@ -5,7 +5,6 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import { createReadStream } from 'fs';
 import ffmpegPath from 'ffmpeg-static';
-
 import { Response as res } from 'express';
 
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -16,7 +15,7 @@ export class AppService {
     private readonly tempDir = path.join(__dirname, '../../temp'); // Directory to store temporary files
     
     constructor(){
-        this.ensureTempDir(); // Ensure the temp directory exists
+        this.ensureTempDir(this.tempDir); // Ensure the temp directory exists
 
     }
     
@@ -162,8 +161,8 @@ export class AppService {
      * @throws {Error} If there is an error creating the directory other than it already existing.
      * @returns {Promise<void>} A promise that resolves when the directory is ensured to exist.
     */
-    private async ensureTempDir(): Promise<void> {
-        await fs.mkdir(this.tempDir, { recursive: true }).catch((err) => {
+    private async ensureTempDir(tempDir: string): Promise<void> {
+        await fs.mkdir(tempDir, { recursive: true }).catch((err) => {
             if (err.code !== 'EEXIST') {
                 console.error('Error creating temp directory:', err);
                 throw err;
