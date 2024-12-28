@@ -41,7 +41,7 @@ export class AppService {
         
         let agent: any = undefined;
 
-        if(NODE_ENV === 'production'){
+        if(NODE_ENV !== 'production'){
             agent = ytdl.createAgent(JSON.parse(readFileSync("cookies.json", "utf-8")))
         }
         const videoInfo = agent ? await ytdl.getInfo(videoURL, { agent }) : await ytdl.getInfo(videoURL);
