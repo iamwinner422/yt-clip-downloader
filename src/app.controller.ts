@@ -17,7 +17,7 @@ export class AppController {
         type: 'object', 
         properties: { 
             title: { type: 'string' }, 
-            duration: { type: 'number' }, 
+            duration: { type: 'string' }, 
             thumbnail: { type: 'string' }, 
             channel: { type: 'string' } 
         } 
