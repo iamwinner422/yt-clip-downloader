@@ -39,7 +39,7 @@ export class AppService {
         if (!videoURL) throw new BadRequestException("Video URL is required");
         let proxyAgent: any = undefined;
         
-        if(NODE_ENV !== 'production') {
+        if(NODE_ENV === 'production') {
             proxyAgent = process.env.YTDL_PROXY_AGENT
             ytdl.createProxyAgent({uri: proxyAgent});
         }
