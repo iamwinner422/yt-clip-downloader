@@ -44,7 +44,7 @@ export class AppService {
             ytdl.createProxyAgent({uri: proxyAgent});
         }
 
-        const videoInfo = proxyAgent ? await ytdl.getInfo(videoURL) : await ytdl.getInfo(videoURL, {agent: proxyAgent});
+        const videoInfo = proxyAgent ? await ytdl.getInfo(videoURL, {agent: proxyAgent}) :  await ytdl.getInfo(videoURL);
         
         return {
             title: videoInfo.videoDetails.title,
