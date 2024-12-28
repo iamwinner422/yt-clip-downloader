@@ -43,7 +43,7 @@ export class AppService {
         
         if(NODE_ENV === 'production') {
             const proxyUrl = process.env.YTDL_PROXY_AGENT_URL
-            proxyAgent = new HttpsProxyAgent(proxyUrl);
+            proxyAgent =  ytdl.createProxyAgent({uri: proxyUrl});
             
         }
 
