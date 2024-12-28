@@ -13,7 +13,6 @@ export class AppController {
 
 
     @Get('/video-info/:videoURL')
-    @ApiParam({ name: 'videoURL', type: String, required: true })
     @ApiResponse({ status: 200, schema: { 
         type: 'object', 
         properties: { 
@@ -24,6 +23,6 @@ export class AppController {
         } 
     }})
     async getVideoInfo(@Param('videoURL') videoURL: string) {
-        return this.appService.getInfo(videoURL);
+        return this.appService.getVideoInfo(videoURL);
     }
 }
