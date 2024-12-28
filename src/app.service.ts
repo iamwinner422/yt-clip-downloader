@@ -49,10 +49,22 @@ export class AppService {
         }
     }
 
+    /**
+     * Downloads a clip from a YouTube video
+     *
+     * @param videoURL The URL of the video to download from
+     * @param start The start time of the clip in seconds
+     * @param duration The duration of the clip in seconds
+     * @param res The response object to write the clip to
+     *
+     * @throws {BadRequestException} If no video URL is provided, or if the start time or duration are not valid positive numbers
+     * @throws {InternalServerErrorException} If there is an error downloading the video or processing it with FFmpeg
+     *
+     * @returns {Promise<void>} A promise that resolves when the clip is downloaded and sent to the client
+     */
     async downloadClip(videoURL: string, start: number, duration: number, res: res) {
         const tempClipPath: string = path.join(this.tempDir, `temp_${Date.now()}.mp4`);
 
-        let fileStream = null;
         let ffmpegCommand = null;
 
         // Basic Validations
