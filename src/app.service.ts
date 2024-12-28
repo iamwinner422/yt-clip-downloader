@@ -1,3 +1,4 @@
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import * as ytdl from '@distube/ytdl-core';
 import * as ffmpeg from 'fluent-ffmpeg';
@@ -37,11 +38,13 @@ export class AppService {
      */
     async getVideoInfo(videoURL: string) {
         if (!videoURL) throw new BadRequestException("Video URL is required");
-        let proxyAgent: any = undefined;
+        
+        let proxyAgent: Agent | undefined = undefined;
         
         if(NODE_ENV === 'production') {
-            proxyAgent = process.env.YTDL_PROXY_AGENT
-            ytdl.createProxyAgent({uri: proxyAgent});
+            const proxyUrl = process.env.YTDL_PROXY_AGENT_URL
+            proxyAgent = HttpsProxyAgent(proxyUrl);
+            
         }
 
         const videoInfo = proxyAgent ? await ytdl.getInfo(videoURL, {agent: proxyAgent}) :  await ytdl.getInfo(videoURL);
