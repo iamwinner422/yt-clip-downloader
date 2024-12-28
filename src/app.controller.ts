@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import { ApiParam, ApiResponse } from '@nestjs/swagger';
 import { Response as res } from 'express';
@@ -13,7 +13,7 @@ export class AppController {
     }
 
 
-    @Get('/video-info/:videoURL')
+    @Get('/video-info')
     @ApiResponse({ status: 200, schema: { 
         type: 'object', 
         properties: { 
@@ -23,14 +23,15 @@ export class AppController {
             channel: { type: 'string' } 
         } 
     }})
-    async getVideoInfo(@Param('videoURL') videoURL: string) {
+
+    async getVideoInfo(@Query('videoURL') videoURL: string) {
         return this.appService.getVideoInfo(videoURL);
     }
 
 
-    @Get('/download-clip/:videoURL/:start/:duration')
+    @Get('/download-clip')
     @ApiResponse({ status: 200, type: 'file' })
-    async downloadClip(@Param('videoURL') videoURL: string, @Param('start') start: number, @Param('duration') duration: number, @Res() res: res ) {
+    async downloadClip(@Query('videoURL') videoURL: string, @Query('start') start: number, @Query('duration') duration: number, @Res() res: res ) {
         return this.appService.downloadClip(videoURL, start, duration, res);
     }
 }
