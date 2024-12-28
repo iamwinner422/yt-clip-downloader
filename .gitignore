@@ -3,6 +3,10 @@
 /node_modules
 /build
 
+
+# For temp videos
+/temp
+
 # Logs
 logs
 *.log

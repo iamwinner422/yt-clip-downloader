@@ -1,9 +1,27 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as ytdl from '@distube/ytdl-core';
+import * as ffmpeg from 'fluent-ffmpeg';
+import * as path from 'path';
+import * as fs from 'fs/promises';
+import { createReadStream } from 'fs';
+import ffmpegPath from 'ffmpeg-static';
+
+
+
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 
 @Injectable()
 export class AppService {
+    private readonly tempDir = path.join(__dirname, '../../temp'); // Directory to store temporary files
+    
+    constructor(){
+        this.ensureTempDir(); // Ensure the temp directory exists
+
+    }
+    
+    
+    
     getHello(): string {
         return 'Hello World!';
     }
@@ -31,6 +49,42 @@ export class AppService {
         }
     }
 
+    async downloadClip(videoURL: string, start: number, duration: number) {
+        const tempFilePath: string = path.join(this.tempDir, `temp_${Date.now()}.mp4`);
+        let videoStream = null;
+        let fileStream = null;
+        let ffmpegCommand = null;
+
+
+        if(!videoURL || !start || !duration) throw new BadRequestException('Video URL, start time, and duration are required');
+
+        const startTime: number = Number(start);
+        const durationTime: number = Number(duration);
+
+
+        if (isNaN(startTime) || isNaN(durationTime) || startTime < 0 || durationTime <= 0) {
+            throw new BadRequestException('Start and duration must be valid positive numbers');
+        }
+
+        const videoInfo = await ytdl.getInfo(videoURL);
+        const videoTitle: string = `Clip-${start}_${Date.now()}`;
+
+        const format = ytdl.chooseFormat(videoInfo.formats, {
+            quality: 'highest',
+            filter: (format) => format.hasVideo && format.hasAudio,
+        });
+
+        if (!format) {
+            throw new Error('Could not find a suitable video format.');
+        }
+
+        // Creating video stream
+        videoStream = ytdl(videoURL, { format, begin: startTime * 1000}); // Convert start time to milliseconds
+        
+    }
+
+
+
     /**
      * Converts a duration from seconds to a string formatted as "minutes:seconds".
      *
@@ -43,4 +97,45 @@ export class AppService {
 
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     }
+
+    /**
+     * Ensures that the temporary directory exists by creating it if it does not.
+     * If the directory already exists, no action is taken.
+     *
+     * @throws {Error} If there is an error creating the directory other than it already existing.
+     * @returns {Promise<void>} A promise that resolves when the directory is ensured to exist.
+    */
+    private async ensureTempDir(): Promise<void> {
+        await fs.mkdir(this.tempDir, { recursive: true }).catch((err) => {
+            if (err.code !== 'EEXIST') {
+                console.error('Error creating temp directory:', err);
+                throw err;
+            }
+        });
+    }
+
+    /**
+     * Retries the given operation up to the given number of times, waiting a specified amount of time between retries.
+     *
+     * @param operation The operation to retry. Should return a Promise.
+     * @param maxRetries The number of times to retry the operation.
+     * @param delay The amount of time, in milliseconds, to wait between retries. Defaults to 1000.
+     * @throws {Error} If the operation fails after the maximum number of retries.
+     * @returns {Promise<void>} A promise that resolves when the operation is successful.
+     */
+    private async retryOperation(operation, maxRetries, delay = 1000): Promise<void> {
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                return await operation();
+            } catch (error) {
+                if (i === maxRetries - 1) throw error;
+                await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+            }
+        }
+    }
+
+    private sanitizeFileName(fileName: string): string {
+        return fileName.replace(/[^a-zA-Z0-9]/g, '_');
+    }
+    
 }
