@@ -1,6 +1,4 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { channel } from 'diagnostics_channel';
-import { title } from 'process';
 import ytdl from 'ytdl-core';
 
 @Injectable()
@@ -14,7 +12,6 @@ export class AppService {
         if(!videoURL) throw new BadRequestException('Video URL is required');
 
         const videoInfo = await ytdl.getInfo(videoURL);
-
         return {
             title: videoInfo.videoDetails.title,
             duration: parseInt(videoInfo.videoDetails.lengthSeconds),
