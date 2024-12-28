@@ -173,9 +173,7 @@ export class AppService {
     private async ensureTempDir(tempDir: string): Promise<void> {
         try {
             await fs.mkdir(tempDir, { recursive: true });
-            console.log(
-                `Temp directory created or already exists: ${this.tempDir}`,
-            );
+            console.log(`Temp directory created or already exists: ${this.tempDir}`);
         } catch (err) {
             console.error("Error creating temp directory:", err);
             throw err;
