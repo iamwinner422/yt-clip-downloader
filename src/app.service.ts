@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import ytdl from 'ytdl-core';
 
 @Injectable()
 export class AppService {
@@ -9,5 +10,7 @@ export class AppService {
 
     async getInfo(videoURL: string) {
         if(!videoURL) throw new BadRequestException('Video URL is required');
+
+        const videoInfo = await ytdl.getInfo(videoURL);
     }
 }
