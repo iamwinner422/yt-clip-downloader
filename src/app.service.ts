@@ -6,6 +6,7 @@ import * as fs from 'fs/promises';
 import { createReadStream } from 'fs';
 import * as tough from 'tough-cookie'
 import axios from 'axios';
+import { readFileSync } from 'fs';
 
 //import statement didn't work
 const ffmpegPath = require('ffmpeg-static');
@@ -38,17 +39,12 @@ export class AppService {
     async getVideoInfo(videoURL: string) {
         if (!videoURL) throw new BadRequestException("Video URL is required");
         
-        const COOKIE = 'CONSENT=YES+; SOCS=CAISEwgDEgk0NzI4MDczNTk';
+        let agent: any = undefined;
 
-        
-        const videoInfo = (NODE_ENV === 'production') ? await ytdl.getInfo(videoURL, {
-            requestOptions: {
-                headers: {
-                    cookies: COOKIE,
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-                },        
-            }
-        }) : await ytdl.getInfo(videoURL);
+        if(NODE_ENV === 'production'){
+            agent = ytdl.createAgent(JSON.parse(readFileSync("cookies.json", "utf-8")))
+        }
+        const videoInfo = agent ? await ytdl.getInfo(videoURL, { agent }) : await ytdl.getInfo(videoURL);
 
     
         
