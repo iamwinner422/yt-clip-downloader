@@ -3,7 +3,7 @@
 This API allows you to download specific segments of YouTube videos by specifying a start timestamp and duration. It's based on [ytdl-core](https://github.com/distubejs/ytdl-core) (DisTube version), [fluent-ffmep](https://github.com/fluent-ffmpeg/node-fluent-ffmpeg), [ffmpeg-static](https://github.com/eugeneware/ffmpeg-static) and [Nest](https://nestjs.com) Framework
 
 ## Demo link:
-https://yt-clip-downloader.onrender.com
+https://effective-petronilla-422-9588d048.koyeb.app
 
 ## Project setup
 
@@ -25,7 +25,7 @@ $ npm run start:prod
 ```
 
 ## Usage
-The Swagger definition for this API is available at: [adresse]()
+The Swagger definition for this API is available [here](https://effective-petronilla-422-9588d048.koyeb.app)
 ### Download a clip
 1. **Endpoint**: ```GET /download-clip```
 
