@@ -233,4 +233,9 @@ export class AppService {
             res.status(500).send("Internal Server Error: Processing failed.");
         }
     }
+
+
+    private async getYoutubeCookies(){
+        
+    }
 }
