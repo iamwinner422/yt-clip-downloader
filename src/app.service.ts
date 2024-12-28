@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, StreamableFile } from '@nestjs/common';
 import * as ytdl from '@distube/ytdl-core';
 import * as ffmpeg from 'fluent-ffmpeg';
 import * as path from 'path';
@@ -6,7 +6,7 @@ import * as fs from 'fs/promises';
 import { createReadStream } from 'fs';
 import ffmpegPath from 'ffmpeg-static';
 
-
+import { Response as res } from 'express';
 
 ffmpeg.setFfmpegPath(ffmpegPath);
 
@@ -49,25 +49,27 @@ export class AppService {
         }
     }
 
-    async downloadClip(videoURL: string, start: number, duration: number) {
-        const tempFilePath: string = path.join(this.tempDir, `temp_${Date.now()}.mp4`);
-        let videoStream = null;
+    async downloadClip(videoURL: string, start: number, duration: number, res: res) {
+        const tempClipPath: string = path.join(this.tempDir, `temp_${Date.now()}.mp4`);
+
         let fileStream = null;
         let ffmpegCommand = null;
 
-
+        // Basic Validations
         if(!videoURL || !start || !duration) throw new BadRequestException('Video URL, start time, and duration are required');
 
+        //Parsing start and duration
         const startTime: number = Number(start);
         const durationTime: number = Number(duration);
 
-
+        // Validating start and duration
         if (isNaN(startTime) || isNaN(durationTime) || startTime < 0 || durationTime <= 0) {
             throw new BadRequestException('Start and duration must be valid positive numbers');
         }
 
+        // Get video info
         const videoInfo = await ytdl.getInfo(videoURL);
-        const videoTitle: string = `Clip-${start}_${Date.now()}`;
+        
 
         const format = ytdl.chooseFormat(videoInfo.formats, {
             quality: 'highest',
@@ -79,8 +81,51 @@ export class AppService {
         }
 
         // Creating video stream
-        videoStream = ytdl(videoURL, { format, begin: startTime * 1000}); // Convert start time to milliseconds
+        const videoStream = ytdl(videoURL, { format, begin: startTime * 1000}); // Convert start time to milliseconds
         
+        // Processing with ffmpeg
+        await new Promise((resolve, reject) => {
+            ffmpegCommand = ffmpeg()
+                .input(videoStream)
+                .seekInput(startTime)
+                .duration(durationTime)
+                .outputOptions([
+                    '-c:v copy',
+                    '-c:a copy',
+                    '-avoid_negative_ts make_zero',
+                    '-movflags +faststart',
+                    '-y',
+                ])
+                .output(tempClipPath)
+                .on('start', () => console.log('FFmpeg processing started...'))
+                .on('end', () => {
+                    console.log('FFmpeg processing completed');
+                    resolve(tempClipPath);
+                })
+                .on('error', (err) => {
+                    console.error('FFmpeg error:', err);
+                    reject(new Error(`FFmpeg processing failed: ${err.message}`));
+                })
+                .run();
+            
+            // Create a clip name
+            const clipName: string = `Clip-${startTime}_${Date.now()}.mp4`;
+
+            res.setHeader('Content-Disposition', `attachment; filename="${clipName}"`);
+            res.setHeader('Content-Type', 'video/mp4');
+            
+            const clipStream = createReadStream(tempClipPath);
+            clipStream.pipe(res);
+
+            // Nettoyage après envoi
+            res.on('finish', async () => {
+                await this.cleanup(ffmpegCommand, videoStream, clipStream, tempClipPath);      
+            });
+
+            res.on('error', async () => {
+                await this.cleanup(ffmpegCommand, videoStream, clipStream, tempClipPath); 
+            });
+        });
     }
 
 
@@ -115,27 +160,32 @@ export class AppService {
     }
 
     /**
-     * Retries the given operation up to the given number of times, waiting a specified amount of time between retries.
+     * Cleans up resources used by the clip download operation.
      *
-     * @param operation The operation to retry. Should return a Promise.
-     * @param maxRetries The number of times to retry the operation.
-     * @param delay The amount of time, in milliseconds, to wait between retries. Defaults to 1000.
-     * @throws {Error} If the operation fails after the maximum number of retries.
-     * @returns {Promise<void>} A promise that resolves when the operation is successful.
+     * Cleans up the FFmpeg command if it is running, the video stream if it is not destroyed, the clip stream, and the temporary clip file.
+     *
+     * @param ffmpegCommand The FFmpeg command to clean up if it is running.
+     * @param videoStream The video stream to clean up if it is not destroyed.
+     * @param clipStream The clip stream to clean up.
+     * @param tempClipPath The path to the temporary clip file to clean up.
+     * @throws {Error} If there is an error cleaning up the resources.
+     * @returns {Promise<void>} A promise that resolves when the resources are cleaned up.
      */
-    private async retryOperation(operation, maxRetries, delay = 1000): Promise<void> {
-        for (let i = 0; i < maxRetries; i++) {
-            try {
-                return await operation();
-            } catch (error) {
-                if (i === maxRetries - 1) throw error;
-                await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+    private async cleanup(ffmpegCommand: any, videoStream: any, clipStream: any, tempClipPath: string) {
+        try {
+            if (ffmpegCommand) {
+                ffmpegCommand.kill('SIGKILL');
             }
+            if (videoStream && !videoStream.destroyed) {
+                videoStream.destroy();
+            }
+            if (clipStream) {
+                clipStream.close();
+            }
+            await fs.unlink(tempClipPath).catch(() => {});
+        } catch (err) {
+            console.error('Cleanup error:', err);
         }
-    }
-
-    private sanitizeFileName(fileName: string): string {
-        return fileName.replace(/[^a-zA-Z0-9]/g, '_');
     }
     
 }
