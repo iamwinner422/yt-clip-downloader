@@ -4,6 +4,7 @@ import * as ffmpeg from 'fluent-ffmpeg';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { createReadStream } from 'fs';
+import { Agent } from 'http';
 
 
 //import statement didn't work
@@ -36,18 +37,18 @@ export class AppService {
      */
     async getVideoInfo(videoURL: string) {
         if (!videoURL) throw new BadRequestException("Video URL is required");
-
-        if(NODE_ENV === 'production') {
-            const proxyAgent = process.env.YTDL_PROXY_AGENT
+        let proxyAgent: any = undefined;
+        
+        if(NODE_ENV !== 'production') {
+            proxyAgent = process.env.YTDL_PROXY_AGENT
             ytdl.createProxyAgent({uri: proxyAgent});
         }
 
-        const videoInfo = await ytdl.getInfo(videoURL);
+        const videoInfo = proxyAgent ? await ytdl.getInfo(videoURL) : await ytdl.getInfo(videoURL, {agent: proxyAgent});
+        
         return {
             title: videoInfo.videoDetails.title,
-            duration: this.formatLengthSeconds(
-                parseInt(videoInfo.videoDetails.lengthSeconds),
-            ),
+            duration: this.formatLengthSeconds(parseInt(videoInfo.videoDetails.lengthSeconds)),
             thumbnail: videoInfo.videoDetails.thumbnails[0].url,
             channel: videoInfo.videoDetails.author.name,
         };
