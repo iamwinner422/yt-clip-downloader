@@ -17,10 +17,26 @@ const NODE_ENV = process.env.NODE_ENV;
 @Injectable()
 export class AppService {
     private readonly tempDir = path.join(__dirname, "./temp"); // Directory to store temporary files
+    private agent: ytdl.Agent; // Agent for downloading YouTube videos
 
     constructor() {
         this.ensureTempDir(this.tempDir); // Ensure the temp directory exists
     }
+
+    private initializeAgent() {
+        const cookiesPath = path.join(__dirname, '..', 'cookies.json');
+        const cookiesContent = readFileSync(cookiesPath, 'utf-8');
+        this.agent = ytdl.createAgent(JSON.parse(cookiesContent));
+    }
+
+    private getAgent(): ytdl.Agent {
+        return this.agent;
+    }
+
+    onModuleInit() {
+        this.initializeAgent();
+    }
+
 
     getHello(): string {
         return "Hello World!";
@@ -39,16 +55,14 @@ export class AppService {
     async getVideoInfo(videoURL: string) {
         if (!videoURL) throw new BadRequestException("Video URL is required");
         
-        let agent: any = undefined;
-
-        if(NODE_ENV === 'production'){
-            console.log(JSON.parse(readFileSync("cookies.json", "utf-8")))
-            agent = ytdl.createAgent(JSON.parse(readFileSync("cookies.json", "utf-8")))
+        if (!ytdl.validateURL(videoURL)) {
+            throw new BadRequestException('Youtube url not invalid');
         }
-        const videoInfo = agent ? await ytdl.getInfo(videoURL, { agent }) : await ytdl.getInfo(videoURL);
-
-    
         
+        const agent = await this.getAgent();
+        
+        const videoInfo = (NODE_ENV === 'production') ? await ytdl.getInfo(videoURL, { agent }) : await ytdl.getInfo(videoURL);
+
         return {
             title: videoInfo.videoDetails.title,
             duration: this.formatLengthSeconds(parseInt(videoInfo.videoDetails.lengthSeconds)),
