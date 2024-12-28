@@ -8,7 +8,9 @@ import { createReadStream } from 'fs';
 
 //import statement didn't work
 const ffmpegPath = require('ffmpeg-static');
+ffmpeg.setFfmpegPath(ffmpegPath); // Set the path to the FFmpeg executable
 
+const NODE_ENV = process.env.NODE_ENV;
 
 @Injectable()
 export class AppService {
@@ -34,6 +36,11 @@ export class AppService {
      */
     async getVideoInfo(videoURL: string) {
         if (!videoURL) throw new BadRequestException("Video URL is required");
+
+        if(NODE_ENV === 'production') {
+            const proxyAgent = process.env.YTDL_PROXY_AGENT
+            ytdl.createProxyAgent({uri: proxyAgent});
+        }
 
         const videoInfo = await ytdl.getInfo(videoURL);
         return {
