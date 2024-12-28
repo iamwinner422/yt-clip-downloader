@@ -1,30 +1,26 @@
-import { BadRequestException, Injectable, StreamableFile } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import * as ytdl from '@distube/ytdl-core';
 import * as ffmpeg from 'fluent-ffmpeg';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { createReadStream } from 'fs';
-import ffmpegPath from 'ffmpeg-static';
-import { Response as res } from 'express';
 
-ffmpeg.setFfmpegPath(ffmpegPath);
+
+//import statement didn't work
+const ffmpegPath = require('ffmpeg-static');
 
 
 @Injectable()
 export class AppService {
-    private readonly tempDir = path.join(__dirname, '../../temp'); // Directory to store temporary files
-    
-    constructor(){
+    private readonly tempDir = path.join(__dirname, "./temp"); // Directory to store temporary files
+
+    constructor() {
         this.ensureTempDir(this.tempDir); // Ensure the temp directory exists
-
     }
-    
-    
-    
+
     getHello(): string {
-        return 'Hello World!';
+        return "Hello World!";
     }
-
 
     /**
      * Retrieves information about a video from YouTube
@@ -37,15 +33,17 @@ export class AppService {
      * A promise that resolves with an object containing the video's title, duration in seconds, thumbnail URL, and channel name
      */
     async getVideoInfo(videoURL: string) {
-        if(!videoURL) throw new BadRequestException('Video URL is required');
+        if (!videoURL) throw new BadRequestException("Video URL is required");
 
         const videoInfo = await ytdl.getInfo(videoURL);
         return {
             title: videoInfo.videoDetails.title,
-            duration: this.formatLengthSeconds(parseInt(videoInfo.videoDetails.lengthSeconds)),
+            duration: this.formatLengthSeconds(
+                parseInt(videoInfo.videoDetails.lengthSeconds),
+            ),
             thumbnail: videoInfo.videoDetails.thumbnails[0].url,
-            channel: videoInfo.videoDetails.author.name
-        }
+            channel: videoInfo.videoDetails.author.name,
+        };
     }
 
     /**
@@ -61,97 +59,108 @@ export class AppService {
      *
      * @returns {Promise<void>} A promise that resolves when the clip is downloaded and sent to the client
      */
-    async downloadClip(videoURL: string, start: number, duration: number, res: res) {
-        const tempClipPath: string = path.join(this.tempDir, `temp_${Date.now()}.mp4`);
-
+    public async downloadClip(videoURL: string, start: number, duration: number, res: any) {
+        const tempClipPath = path.join(this.tempDir, `temp_${Date.now()}.mp4`);
         let ffmpegCommand = null;
 
-        // Basic Validations
-        if(!videoURL || !start || !duration) throw new BadRequestException('Video URL, start time, and duration are required');
+        // Basic validations
+        if (!videoURL || start === undefined || duration === undefined) {
+            throw new BadRequestException("Video URL, start time, and duration are required.");
+        }
 
-        //Parsing start and duration
         const startTime: number = Number(start);
         const durationTime: number = Number(duration);
 
-        // Validating start and duration
         if (isNaN(startTime) || isNaN(durationTime) || startTime < 0 || durationTime <= 0) {
-            throw new BadRequestException('Start and duration must be valid positive numbers');
+            throw new BadRequestException("Start and duration must be valid positive numbers.");
         }
 
-        // Get video info
-        const videoInfo = await ytdl.getInfo(videoURL);
-        
+        try {
+            // Get video info
+            const videoInfo = await ytdl.getInfo(videoURL);
+            const format = ytdl.chooseFormat(videoInfo.formats, {
+                quality: "highest",
+                filter: (format) => format.hasVideo && format.hasAudio,
+            });
 
-        const format = ytdl.chooseFormat(videoInfo.formats, {
-            quality: 'highest',
-            filter: (format) => format.hasVideo && format.hasAudio,
-        });
+            if (!format) {
+                throw new Error("Could not find a suitable video format.");
+            }
 
-        if (!format) {
-            throw new Error('Could not find a suitable video format.');
-        }
+            // Create video stream
+            const videoStream = ytdl(videoURL, {
+                format,
+                begin: startTime * 1000,
+            });
 
-        // Creating video stream
-        const videoStream = ytdl(videoURL, { format, begin: startTime * 1000}); // Convert start time to milliseconds
-        
-        // Processing with ffmpeg
-        await new Promise((resolve, reject) => {
-            ffmpegCommand = ffmpeg()
-                .input(videoStream)
-                .seekInput(startTime)
-                .duration(durationTime)
-                .outputOptions([
-                    '-c:v copy',
-                    '-c:a copy',
-                    '-avoid_negative_ts make_zero',
-                    '-movflags +faststart',
-                    '-y',
-                ])
-                .output(tempClipPath)
-                .on('start', () => console.log('FFmpeg processing started...'))
-                .on('end', () => {
-                    console.log('FFmpeg processing completed');
-                    resolve(tempClipPath);
-                })
-                .on('error', (err) => {
-                    console.error('FFmpeg error:', err);
-                    reject(new Error(`FFmpeg processing failed: ${err.message}`));
-                })
-                .run();
-            
-            // Create a clip name
-            const clipName: string = `Clip-${startTime}_${Date.now()}.mp4`;
+            // Process video with FFmpeg
+            await new Promise<void>((resolve, reject) => {
+                ffmpegCommand = ffmpeg()
+                    .input(videoStream)
+                    .seekInput(startTime)
+                    .duration(durationTime)
+                    .outputOptions([
+                        "-c:v copy",
+                        "-c:a copy",
+                        "-avoid_negative_ts make_zero",
+                        "-movflags +faststart",
+                        "-y",
+                    ])
+                    .output(tempClipPath)
+                    .on("start", (cmd) => console.log("FFmpeg started:", cmd))
+                    .on("end", () => {
+                        console.log("FFmpeg processing completed");
+                        resolve();
+                    })
+                    .on("error", (err) => {
+                        console.error("FFmpeg error:", err);
+                        reject(
+                            new Error(
+                                `FFmpeg processing failed: ${err.message}`,
+                            ),
+                        );
+                    })
+                    .run();
+            });
 
-            res.setHeader('Content-Disposition', `attachment; filename="${clipName}"`);
-            res.setHeader('Content-Type', 'video/mp4');
-            
+            // Stream the file to the client
+            const clipName = `Clip-${startTime}_${Date.now()}.mp4`;
+            res.setHeader(
+                "Content-Disposition",
+                `attachment; filename="${clipName}"`,
+            );
+            res.setHeader("Content-Type", "video/mp4");
+
             const clipStream = createReadStream(tempClipPath);
             clipStream.pipe(res);
 
-            // Nettoyage après envoi
-            res.on('finish', async () => {
-                await this.cleanup(ffmpegCommand, videoStream, clipStream, tempClipPath);      
+            clipStream.on("close", async () => {
+                console.log("Streaming completed, starting cleanup...");
+                await this.cleanup(ffmpegCommand, videoStream, clipStream, tempClipPath);
             });
 
-            res.on('error', async () => {
-                await this.cleanup(ffmpegCommand, videoStream, clipStream, tempClipPath); 
+            res.on("error", async (err) => {
+                console.error("Response error:", err);
+                await this.cleanup(ffmpegCommand, videoStream, clipStream, tempClipPath);
             });
-        });
+        } catch (err) {
+            console.error("Download clip error:", err);
+            this.handleError(res);
+            throw new InternalServerErrorException("Failed to process the video clip.");
+        }
     }
-
-
 
     /**
      * Converts a duration from seconds to a string formatted as "minutes:seconds".
      *
      * @param lengthSeconds The duration in seconds to format.
      * @returns A string representing the duration in "minutes:seconds" format.
-    */
+     */
     private formatLengthSeconds(lengthSeconds: number): string {
         const minutes = Math.floor(lengthSeconds / 60);
         const seconds = lengthSeconds % 60;
 
-        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
     }
 
     /**
@@ -160,14 +169,17 @@ export class AppService {
      *
      * @throws {Error} If there is an error creating the directory other than it already existing.
      * @returns {Promise<void>} A promise that resolves when the directory is ensured to exist.
-    */
+     */
     private async ensureTempDir(tempDir: string): Promise<void> {
-        await fs.mkdir(tempDir, { recursive: true }).catch((err) => {
-            if (err.code !== 'EEXIST') {
-                console.error('Error creating temp directory:', err);
-                throw err;
-            }
-        });
+        try {
+            await fs.mkdir(tempDir, { recursive: true });
+            console.log(
+                `Temp directory created or already exists: ${this.tempDir}`,
+            );
+        } catch (err) {
+            console.error("Error creating temp directory:", err);
+            throw err;
+        }
     }
 
     /**
@@ -185,7 +197,7 @@ export class AppService {
     private async cleanup(ffmpegCommand: any, videoStream: any, clipStream: any, tempClipPath: string) {
         try {
             if (ffmpegCommand) {
-                ffmpegCommand.kill('SIGKILL');
+                ffmpegCommand.kill("SIGKILL");
             }
             if (videoStream && !videoStream.destroyed) {
                 videoStream.destroy();
@@ -195,8 +207,20 @@ export class AppService {
             }
             await fs.unlink(tempClipPath).catch(() => {});
         } catch (err) {
-            console.error('Cleanup error:', err);
+            console.error("Cleanup error:", err);
         }
     }
+
     
+    /**
+     * Handles an error by sending an Internal Server Error response if no response has been sent yet.
+     *
+     * @param res The response object to write the error response to.
+     * @returns {void}
+     */
+    private handleError(res: any) {
+        if (!res.headersSent) {
+            res.status(500).send("Internal Server Error: Processing failed.");
+        }
+    }
 }
