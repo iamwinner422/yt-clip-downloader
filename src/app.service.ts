@@ -41,7 +41,7 @@ export class AppService {
         
         let agent: any = undefined;
 
-        if(NODE_ENV !== 'production'){
+        if(NODE_ENV === 'production'){
             console.log(JSON.parse(readFileSync("cookies.json", "utf-8")))
             agent = ytdl.createAgent(JSON.parse(readFileSync("cookies.json", "utf-8")))
         }
