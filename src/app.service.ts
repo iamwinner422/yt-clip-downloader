@@ -39,11 +39,11 @@ export class AppService {
     async getVideoInfo(videoURL: string) {
         if (!videoURL) throw new BadRequestException("Video URL is required");
         
-        let proxyAgent: Agent | undefined = undefined;
+        let proxyAgent: any = undefined;
         
         if(NODE_ENV === 'production') {
             const proxyUrl = process.env.YTDL_PROXY_AGENT_URL
-            proxyAgent = HttpsProxyAgent(proxyUrl);
+            proxyAgent = new HttpsProxyAgent(proxyUrl);
             
         }
 
