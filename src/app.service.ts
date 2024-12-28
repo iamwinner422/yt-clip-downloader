@@ -38,13 +38,13 @@ export class AppService {
     async getVideoInfo(videoURL: string) {
         if (!videoURL) throw new BadRequestException("Video URL is required");
         
-        const cookies = await this.getYoutubeCookies(); // Get YouTube cookies
+        const COOKIE = 'CONSENT=YES+; SOCS=CAISEwgDEgk0NzI4MDczNTk';
 
         
         const videoInfo = (NODE_ENV === 'production') ? await ytdl.getInfo(videoURL, {
             requestOptions: {
                 headers: {
-                    'Cookie': cookies,
+                    cookies: COOKIE,
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
                 },        
             }
