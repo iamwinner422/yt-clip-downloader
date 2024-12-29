@@ -30,7 +30,6 @@ export class AppService {
     }
 
     private getAgent(): ytdl.Agent {
-        console.log(this.agent)
         return this.agent;
     }
 
