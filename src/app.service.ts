@@ -43,15 +43,9 @@ export class AppService {
             throw new BadRequestException('Youtube url not invalid');
         }
         let videoInfo = null; 
-        if(NODE_ENV === 'production') {
-            const proxyURL = process.env.YTDL_PROXY_AGENT;
-            const agent = ytdl.createProxyAgent({uri: proxyURL});
+        const options = (NODE_ENV === 'production') ? { agent: ytdl.createProxyAgent({ uri: process.env.YTDL_PROXY_AGENT }) } : {};
 
-            videoInfo = await ytdl.getInfo(videoURL, { agent });
-
-        }else{
-            videoInfo = await ytdl.getInfo(videoURL);
-        }
+        videoInfo = await ytdl.getInfo(videoURL, options);
         
         return {
             title: videoInfo.videoDetails.title,
