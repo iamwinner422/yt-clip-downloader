@@ -42,12 +42,17 @@ export class AppService {
         if (!ytdl.validateURL(videoURL)) {
             throw new BadRequestException('Youtube url not invalid');
         }
-        const proxyURL = process.env.YTDL_PROXY_AGENT;
-        const agent = ytdl.createProxyAgent({uri: proxyURL});
-        
-        //const videoInfo = (NODE_ENV === 'production') ? await ytdl.getInfo(videoURL, { agent }) : await ytdl.getInfo(videoURL);
-        const videoInfo = await ytdl.getInfo(videoURL, { agent });
+        let videoInfo = null; 
+        if(NODE_ENV === 'production') {
+            const proxyURL = process.env.YTDL_PROXY_AGENT;
+            const agent = ytdl.createProxyAgent({uri: proxyURL});
 
+            videoInfo = await ytdl.getInfo(videoURL, { agent });
+
+        }else{
+            videoInfo = await ytdl.getInfo(videoURL);
+        }
+        
         return {
             title: videoInfo.videoDetails.title,
             duration: this.formatLengthSeconds(parseInt(videoInfo.videoDetails.lengthSeconds)),
