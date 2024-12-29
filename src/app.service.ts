@@ -26,7 +26,7 @@ export class AppService {
     private initializeAgent() {
         const cookiesPath = path.join(__dirname, '..', 'cookies.json');
         const cookiesContent = readFileSync(cookiesPath, 'utf-8');
-        this.agent = ytdl.createAgent(JSON.parse(cookiesContent));
+        this.agent = ytdl.createProxyAgent({uri: process.env.YTDL_PROXY_AGENT}, JSON.parse(cookiesContent));
     }
 
     private getAgent(): ytdl.Agent {
