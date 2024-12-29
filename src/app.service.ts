@@ -30,6 +30,7 @@ export class AppService {
     }
 
     private getAgent(): ytdl.Agent {
+        console.log(this.agent)
         return this.agent;
     }
 
@@ -61,7 +62,8 @@ export class AppService {
         
         const agent = await this.getAgent();
         
-        const videoInfo = (NODE_ENV === 'production') ? await ytdl.getInfo(videoURL, { agent }) : await ytdl.getInfo(videoURL);
+        //const videoInfo = (NODE_ENV === 'production') ? await ytdl.getInfo(videoURL, { agent }) : await ytdl.getInfo(videoURL);
+        const videoInfo = await ytdl.getInfo(videoURL, { agent });
 
         return {
             title: videoInfo.videoDetails.title,
