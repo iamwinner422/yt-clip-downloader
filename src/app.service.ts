@@ -86,7 +86,11 @@ export class AppService {
 
         try {
             // Get video info
-            const videoInfo = await ytdl.getInfo(videoURL);
+            let videoInfo = null; 
+            const options = (NODE_ENV === 'production') ? { agent: ytdl.createProxyAgent({ uri: process.env.YTDL_PROXY_AGENT }) } : {};
+
+            videoInfo = await ytdl.getInfo(videoURL, options);
+            
             const format = ytdl.chooseFormat(videoInfo.formats, {
                 quality: "highest",
                 filter: (format) => format.hasVideo && format.hasAudio,
