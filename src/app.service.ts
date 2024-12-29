@@ -4,9 +4,7 @@ import * as ffmpeg from 'fluent-ffmpeg';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { createReadStream } from 'fs';
-import * as tough from 'tough-cookie'
-import axios from 'axios';
-import { readFileSync } from 'fs';
+
 
 //import statement didn't work
 const ffmpegPath = require('ffmpeg-static');
@@ -17,24 +15,10 @@ const NODE_ENV = process.env.NODE_ENV;
 @Injectable()
 export class AppService {
     private readonly tempDir = path.join(__dirname, "./temp"); // Directory to store temporary files
-    private agent: ytdl.Agent; // Agent for downloading YouTube videos
+    
 
     constructor() {
         this.ensureTempDir(this.tempDir); // Ensure the temp directory exists
-    }
-
-    private initializeAgent() {
-        const cookiesPath = path.join(__dirname, '..', 'cookies.json');
-        const cookiesContent = readFileSync(cookiesPath, 'utf-8');
-        this.agent = ytdl.createAgent(JSON.parse(cookiesContent));
-    }
-
-    private getAgent(): ytdl.Agent {
-        return this.agent;
-    }
-
-    onModuleInit() {
-        this.initializeAgent();
     }
 
 
@@ -58,8 +42,8 @@ export class AppService {
         if (!ytdl.validateURL(videoURL)) {
             throw new BadRequestException('Youtube url not invalid');
         }
-        
-        const agent = await this.getAgent();
+        const proxyURL = process.env.YTDL_PROXY_AGENT;
+        const agent = ytdl.createProxyAgent({uri: proxyURL});
         
         //const videoInfo = (NODE_ENV === 'production') ? await ytdl.getInfo(videoURL, { agent }) : await ytdl.getInfo(videoURL);
         const videoInfo = await ytdl.getInfo(videoURL, { agent });
@@ -248,23 +232,4 @@ export class AppService {
         }
     }
 
-
-    private async getYoutubeCookies(){
-        try{
-            
-            const response = await axios.get('https://www.youtube.com');
-        
-        
-            const cookieJar = new tough.CookieJar();
-            
-            await cookieJar.setCookie('CONSENT=YES+; Domain=.youtube.com', 'https://www.youtube.com');
-            await cookieJar.setCookie('SOCS=CAISEwgDEgk0NzI4MDczNTk; Domain=.youtube.com', 'https://www.youtube.com');
-
-            const cookies = await cookieJar.getCookieString('https://www.youtube.com');
-            return cookies;
-        }catch (error){
-            console.error('Error getting YouTube cookies:', error);
-            throw error;
-        }
-    }
 }
