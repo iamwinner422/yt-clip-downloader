@@ -25,7 +25,7 @@ $ npm run start:prod
 ```
 
 ## Usage
-The Swagger definition for this API is available [here](yt-clip-downloader.koyeb.app)
+The Swagger definition for this API is available [here](https://yt-clip-downloader.koyeb.app)
 ### Download a clip
 1. **Endpoint**: ```GET /download-clip```
 
