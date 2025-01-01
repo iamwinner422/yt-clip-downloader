@@ -77,6 +77,10 @@ export class AppService {
             throw new BadRequestException("Video URL, start time, and duration are required.");
         }
 
+        if (!ytdl.validateURL(videoURL)) {
+            throw new BadRequestException('Youtube url not invalid');
+        }
+
         const startTime: number = Number(start);
         const durationTime: number = Number(duration);
 
