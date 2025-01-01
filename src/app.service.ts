@@ -120,6 +120,8 @@ export class AppService {
                         "-avoid_negative_ts make_zero",
                         "-movflags +faststart",
                         "-y",
+                        "-q:v 1",
+                        "-vf scale=iw:ih"
                     ])
                     .output(tempClipPath)
                     .on("start", (cmd) => console.log("FFmpeg started:", cmd))
