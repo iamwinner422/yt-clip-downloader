@@ -81,10 +81,10 @@ export class AppService {
         }
 
         const startTime: number = Number(start);
-        const durationTime: number = Number(duration);
+        const durationTime: number = Number(duration) + 1; // Add 1 second to include the end of the clip
 
-        if (isNaN(startTime) || isNaN(durationTime) || startTime < 0 || durationTime <= 0) {
-            throw new BadRequestException("Start and duration must be valid positive numbers.");
+        if (isNaN(startTime) || isNaN(durationTime) || startTime < 0 || durationTime <= 1) {
+            throw new BadRequestException("Start and duration must be valid.");
         }
 
         try {
