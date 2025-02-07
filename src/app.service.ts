@@ -46,7 +46,6 @@ export class AppService {
         const options = (NODE_ENV === 'production') ? { agent: ytdl.createProxyAgent({ uri: process.env.YTDL_PROXY_AGENT }) } : {};
 
         videoInfo = await ytdl.getInfo(videoURL, options);
-        console.log("thum", videoInfo.videoDetails.thumbnails)
         return {
             title: videoInfo.videoDetails.title,
             duration: this.formatLengthSeconds(parseInt(videoInfo.videoDetails.lengthSeconds)),
