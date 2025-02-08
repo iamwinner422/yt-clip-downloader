@@ -4,7 +4,7 @@ import * as ffmpeg from 'fluent-ffmpeg';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { createReadStream } from 'fs';
-
+import youtubeDl from 'youtube-dl-exec';
 
 //import statement didn't work
 const ffmpegPath = require('ffmpeg-static');
