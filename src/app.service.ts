@@ -55,6 +55,7 @@ export class AppService {
             noWarnings: true,
             preferFreeFormats: true,
             youtubeSkipDashManifest: true,
+            referer: "https://google.com",
             addHeader: ['referer:youtube.com', 'user-agent:googlebot']
         });
 
