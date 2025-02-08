@@ -4,6 +4,7 @@ import * as ffmpeg from 'fluent-ffmpeg';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { createReadStream } from 'fs';
+import { VideoInfo, ytLinkRegex } from './utils';
 const youtubeDl = require('youtube-dl-exec');
 
 //import statement didn't work
@@ -13,14 +14,9 @@ ffmpeg.setFfmpegPath(ffmpegPath); // Set the path to the FFmpeg executable
 
 
 const NODE_ENV = process.env.NODE_ENV;
-const ytLinkRegex = /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/
 
-interface VideoInfo {
-    title: string;
-    duration_string: string;
-    thumbnail: string;
-    channel: string;
-}
+
+
 
 
 
@@ -60,8 +56,6 @@ export class AppService {
             preferFreeFormats: true,
             youtubeSkipDashManifest: true,
         });
-
-        console.log("vI",videoInfo)
 
         return {
             title: videoInfo.title,
