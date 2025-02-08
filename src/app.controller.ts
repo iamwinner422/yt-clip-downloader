@@ -13,7 +13,7 @@ export class AppController {
     }
 
 
-    @Get('/video-info')
+    @Get('/info')
     @ApiResponse({ status: 200, schema: { 
         type: 'object', 
         properties: { 
