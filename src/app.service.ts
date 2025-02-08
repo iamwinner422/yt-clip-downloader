@@ -17,7 +17,7 @@ const ytLinkRegex = /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be
 
 interface VideoInfo {
     title: string;
-    duration: string;
+    duration_string: string;
     thumbnail: string;
     channel: string;
 }
@@ -53,7 +53,7 @@ export class AppService {
         if (!ytLinkRegex.test(ytLink)) {
             throw new BadRequestException('Youtube url not invalid');
         }
-        let videoInfo = await youtubeDl(ytLink, {
+        let videoInfo: VideoInfo = await youtubeDl(ytLink, {
             dumpSingleJson: true,
             noCheckCertificates: true,
             noWarnings: true,
@@ -64,10 +64,10 @@ export class AppService {
         console.log("vI",videoInfo)
 
         return {
-            title: "videoInfo.videoDetails.title",
-            duration: "this.formatLengthSeconds(parseInt(videoInfo.videoDetails.lengthSeconds))",
-            thumbnail: "videoInfo.videoDetails.thumbnails[videoInfo.videoDetails.thumbnails.length - 1].url", // Get the highest resolution thumbnail
-            channel: "videoInfo.videoDetails.author.name",
+            title: videoInfo.title,
+            duration: videoInfo.duration_string,
+            thumbnail: videoInfo.thumbnail,
+            channel: videoInfo.channel,
         };
     }
 
