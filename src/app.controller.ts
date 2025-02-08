@@ -24,8 +24,8 @@ export class AppController {
         } 
     }})
 
-    async getVideoInfo(@Query('videoURL') videoURL: string) {
-        return this.appService.getVideoInfo(videoURL);
+    async getVideoInfo(@Query('ytLink') ytLink: string) {
+        return this.appService.getVideoInfo(ytLink);
     }
 
 

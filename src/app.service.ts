@@ -4,19 +4,30 @@ import * as ffmpeg from 'fluent-ffmpeg';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { createReadStream } from 'fs';
-import youtubeDl from 'youtube-dl-exec';
+const youtubeDl = require('youtube-dl-exec');
 
 //import statement didn't work
 const ffmpegPath = require('ffmpeg-static');
 ffmpeg.setFfmpegPath(ffmpegPath); // Set the path to the FFmpeg executable
 
+
+
 const NODE_ENV = process.env.NODE_ENV;
+const ytLinkRegex = /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/
+
+interface VideoInfo {
+    title: string;
+    duration: string;
+    thumbnail: string;
+    channel: string;
+}
+
+
 
 @Injectable()
 export class AppService {
     private readonly tempDir = path.join(__dirname, "./temp"); // Directory to store temporary files
     
-
     constructor() {
         this.ensureTempDir(this.tempDir); // Ensure the temp directory exists
     }
@@ -36,21 +47,27 @@ export class AppService {
      * @returns {Promise<{title: string, duration: number, thumbnail: string, channel: string}>}
      * A promise that resolves with an object containing the video's title, duration in seconds, thumbnail URL, and channel name
      */
-    async getVideoInfo(videoURL: string) {
-        if (!videoURL) throw new BadRequestException("Video URL is required");
+    async getVideoInfo(ytLink: string) {
+        if (!ytLink) throw new BadRequestException("Video URL is required");
         
-        if (!ytdl.validateURL(videoURL)) {
+        if (!ytLinkRegex.test(ytLink)) {
             throw new BadRequestException('Youtube url not invalid');
         }
-        let videoInfo = null; 
-        const options = (NODE_ENV === 'production') ? { agent: ytdl.createProxyAgent({ uri: process.env.YTDL_PROXY_AGENT }) } : {};
+        let videoInfo = await youtubeDl(ytLink, {
+            dumpSingleJson: true,
+            noCheckCertificates: true,
+            noWarnings: true,
+            preferFreeFormats: true,
+            youtubeSkipDashManifest: true,
+        });
 
-        videoInfo = await ytdl.getInfo(videoURL, options);
+        console.log("vI",videoInfo)
+
         return {
-            title: videoInfo.videoDetails.title,
-            duration: this.formatLengthSeconds(parseInt(videoInfo.videoDetails.lengthSeconds)),
-            thumbnail: videoInfo.videoDetails.thumbnails[videoInfo.videoDetails.thumbnails.length - 1].url, // Get the highest resolution thumbnail
-            channel: videoInfo.videoDetails.author.name,
+            title: "videoInfo.videoDetails.title",
+            duration: "this.formatLengthSeconds(parseInt(videoInfo.videoDetails.lengthSeconds))",
+            thumbnail: "videoInfo.videoDetails.thumbnails[videoInfo.videoDetails.thumbnails.length - 1].url", // Get the highest resolution thumbnail
+            channel: "videoInfo.videoDetails.author.name",
         };
     }
 
