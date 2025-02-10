@@ -6,6 +6,7 @@ import * as fs from 'fs/promises';
 import { createReadStream } from 'fs';
 import { VideoInfo, ytLinkRegex } from './utils';
 const youtubeDl = require('youtube-dl-exec');
+import { spawn } from "child_process";
 
 //import statement didn't work
 const ffmpegPath = require('ffmpeg-static');
