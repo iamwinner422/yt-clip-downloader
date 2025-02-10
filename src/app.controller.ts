@@ -19,6 +19,7 @@ export class AppController {
         properties: { 
             title: { type: 'string' }, 
             duration: { type: 'string' }, 
+            durationSeconds: { type: 'number' }, 
             thumbnail: { type: 'string' }, 
             channel: { type: 'string' } 
         } 

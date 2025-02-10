@@ -6,6 +6,8 @@ import * as fs from 'fs/promises';
 import { createReadStream } from 'fs';
 import { VideoInfo, ytLinkRegex } from './utils';
 const youtubeDl = require('youtube-dl-exec');
+
+
 import { spawn } from "child_process";
 
 //import statement didn't work
@@ -41,7 +43,7 @@ export class AppService {
      *
      * @throws {BadRequestException} If no video URL is provided
      *
-     * @returns {Promise<{title: string, duration: number, thumbnail: string, channel: string}>}
+     * @returns {Promise<{title: string, duration: string, durationSeconds: number, thumbnail: string, channel: string}>}
      * A promise that resolves with an object containing the video's title, duration in seconds, thumbnail URL, and channel name
      */
     async getVideoInfo(ytLink: string) {
@@ -59,10 +61,11 @@ export class AppService {
             cookies: "cookies.txt",
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
         });
-
+        console.log(videoInfo)
         return {
             title: videoInfo.title,
             duration: videoInfo.duration_string,
+            durationSeconds: videoInfo.duration_number,
             thumbnail: videoInfo.thumbnail,
             channel: videoInfo.channel,
         };

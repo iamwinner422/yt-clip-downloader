@@ -4,6 +4,7 @@ export const ytLinkRegex = /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|y
 export interface VideoInfo {
     title: string;
     duration_string: string;
+    duration_number: number;
     thumbnail: string;
     channel: string;
 }
