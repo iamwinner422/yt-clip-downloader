@@ -52,13 +52,14 @@ export class AppService {
         if (!ytLinkRegex.test(ytLink)) {
             throw new BadRequestException('Youtube url not invalid');
         }
+        const cookiesPath = path.join(__dirname, '..', 'cookies.json');
         let videoInfo: VideoInfo = await youtubeDl(ytLink, {
             dumpSingleJson: true,
             noCheckCertificates: true,
             noWarnings: true,
             preferFreeFormats: true,
             youtubeSkipDashManifest: true,
-            cookies: "cookies.txt",
+            cookies: cookiesPath,
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
         });
         return {
@@ -180,10 +181,6 @@ export class AppService {
                 await this.cleanup(ffmpegCommand, videoStream, clipStream, tempClipPath);
             });
 
-            res.on("finish", () => {
-                console.log("Download finished, sending success response...");
-                res.json({ success: true });
-            });
         } catch (err) {
             console.error("Download clip error:", err);
             this.handleError(res);
