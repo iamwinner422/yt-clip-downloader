@@ -61,7 +61,6 @@ export class AppService {
             cookies: "cookies.txt",
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
         });
-        console.log(videoInfo)
         return {
             title: videoInfo.title,
             duration: videoInfo.duration_string,
