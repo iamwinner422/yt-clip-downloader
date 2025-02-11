@@ -84,16 +84,16 @@ export class AppService {
      *
      * @returns {Promise<void>} A promise that resolves when the clip is downloaded and sent to the client
      */
-    public async downloadClip(videoURL: string, start: number, duration: number, res: any) {
+    public async downloadClip(ytLink: string, start: number, duration: number, res: any) {
         const tempClipPath = path.join(this.tempDir, `temp_${Date.now()}.mp4`);
         let ffmpegCommand = null;
 
         // Basic validations
-        if (!videoURL || start === undefined || duration === undefined) {
+        if (!ytLink || start === undefined || duration === undefined) {
             throw new BadRequestException("Video URL, start time, and duration are required.");
         }
 
-        if (!ytdl.validateURL(videoURL)) {
+        if (!ytdl.validateURL(ytLink)) {
             throw new BadRequestException('Youtube url not invalid');
         }
 
@@ -110,7 +110,7 @@ export class AppService {
             const isProduction = NODE_ENV === 'production';
             const options = isProduction ? { agent: ytdl.createProxyAgent({ uri: process.env.YTDL_PROXY_AGENT }) } : {};
 
-            videoInfo = await ytdl.getInfo(videoURL, options);
+            videoInfo = await ytdl.getInfo(ytLink, options);
 
             const format = ytdl.chooseFormat(videoInfo.formats, {
                 quality: "highest",
@@ -122,7 +122,7 @@ export class AppService {
             }
 
             // Create video stream
-            const videoStream = ytdl(videoURL, {
+            const videoStream = ytdl(ytLink, {
                 format,
                 begin: startTime * 1000,
                 ...(isProduction && { agent: options.agent}) // Add proxy agent if in production
@@ -180,7 +180,7 @@ export class AppService {
                 console.error("Response error:", err);
                 await this.cleanup(ffmpegCommand, videoStream, clipStream, tempClipPath);
             });
-            
+
             res.on("finish", () => {
                 console.log("Download finished, sending success response...");
                 res.json({ success: true });

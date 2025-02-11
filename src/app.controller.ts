@@ -31,8 +31,8 @@ export class AppController {
 
 
     @Get('/download-clip')
-    @ApiResponse({ status: 200, type: 'file' })
-    async downloadClip(@Query('videoURL') videoURL: string, @Query('start') start: number, @Query('duration') duration: number, @Res() res: res ) {
-        return this.appService.downloadClip(videoURL, start, duration, res);
+    @ApiResponse({ status: 200, schema: { type: 'object', properties: { file: { type: 'file', format: 'binary' }, success: { type: 'boolean'} }}  })
+    async downloadClip(@Query('ytLink') ytLink: string, @Query('start') start: number, @Query('duration') duration: number, @Res() res: res ) {
+        return this.appService.downloadClip(ytLink, start, duration, res);
     }
 }
