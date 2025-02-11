@@ -52,7 +52,8 @@ export class AppService {
         if (!ytLinkRegex.test(ytLink)) {
             throw new BadRequestException('Youtube url not invalid');
         }
-        const cookiesPath = path.join(__dirname, '..', 'cookies.json');
+        const cookiesPath = path.join(__dirname, '..', 'cookies.txt');
+        console.log(cookiesPath);
         let videoInfo: VideoInfo = await youtubeDl(ytLink, {
             dumpSingleJson: true,
             noCheckCertificates: true,
