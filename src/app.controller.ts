@@ -13,25 +13,26 @@ export class AppController {
     }
 
 
-    @Get('/video-info')
+    @Get('/info')
     @ApiResponse({ status: 200, schema: { 
         type: 'object', 
         properties: { 
             title: { type: 'string' }, 
             duration: { type: 'string' }, 
+            durationSeconds: { type: 'number' }, 
             thumbnail: { type: 'string' }, 
             channel: { type: 'string' } 
         } 
     }})
 
-    async getVideoInfo(@Query('videoURL') videoURL: string) {
-        return this.appService.getVideoInfo(videoURL);
+    async getVideoInfo(@Query('ytLink') ytLink: string) {
+        return this.appService.getVideoInfo(ytLink);
     }
 
 
     @Get('/download-clip')
-    @ApiResponse({ status: 200, type: 'file' })
-    async downloadClip(@Query('videoURL') videoURL: string, @Query('start') start: number, @Query('duration') duration: number, @Res() res: res ) {
-        return this.appService.downloadClip(videoURL, start, duration, res);
+    @ApiResponse({ status: 200, schema: { type: 'object', properties: { file: { type: 'file', format: 'binary' }, success: { type: 'boolean'} }}  })
+    async downloadClip(@Query('ytLink') ytLink: string, @Query('start') start: number, @Query('duration') duration: number, @Res() res: res ) {
+        return this.appService.downloadClip(ytLink, start, duration, res);
     }
 }

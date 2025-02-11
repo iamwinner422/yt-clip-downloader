@@ -33,29 +33,29 @@ The Swagger definition for this API is available [here](https://yt-clip-download
 
 | Parameter |  Type  |        Description       | Required |
 |-----------|--------|--------------------------|----------|
-| videoURL  | string | YouTube video URL        |   yes    |
+| ytLink    | string | YouTube video URL        |   yes    |
 |start      | number | Start time in seconds    |   yes    |
 |duration   | number | Clip duration in seconds |   yes    |
 
 3. **Example**:
 ```
 curl -X 'GET' \
-  'http://localhost:3000/download-clip?videoURL=https://youtu.be/dQw4w9WgXcQ&start=60&duration=30' \
+  'http://localhost:3000/download-clip?ytLink=https://youtu.be/dQw4w9WgXcQ&start=60&duration=30' \
   -H 'accept: application/json'
 ```
 
 ### Get Video Informations
-1. **Endpoint**: ```GET /video-infos```
+1. **Endpoint**: ```GET /info```
 
 2. **Query Parameters**:
 
 | Parameter |  Type  |        Description       | Required |
 |-----------|--------|--------------------------|----------|
-| videoURL  | string | YouTube video URL        |   yes    |
+| ytLink    | string | YouTube video URL        |   yes    |
 
 3. **Example**:
 ```
 curl -X 'GET' \
-  'http://localhost:3000/video-info?videoURL=https://youtu.be/dQw4w9WgXcQ' \
+  'http://localhost:3000/video-info?ytLink=https://youtu.be/dQw4w9WgXcQ' \
   -H 'accept: application/json'
 ```

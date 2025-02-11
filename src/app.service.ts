@@ -4,19 +4,29 @@ import * as ffmpeg from 'fluent-ffmpeg';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { createReadStream } from 'fs';
+import { VideoInfo, ytLinkRegex } from './utils';
+const youtubeDl = require('youtube-dl-exec');
 
+
+import { spawn } from "child_process";
 
 //import statement didn't work
 const ffmpegPath = require('ffmpeg-static');
 ffmpeg.setFfmpegPath(ffmpegPath); // Set the path to the FFmpeg executable
 
+
+
 const NODE_ENV = process.env.NODE_ENV;
+
+
+
+
+
 
 @Injectable()
 export class AppService {
     private readonly tempDir = path.join(__dirname, "./temp"); // Directory to store temporary files
     
-
     constructor() {
         this.ensureTempDir(this.tempDir); // Ensure the temp directory exists
     }
@@ -33,24 +43,30 @@ export class AppService {
      *
      * @throws {BadRequestException} If no video URL is provided
      *
-     * @returns {Promise<{title: string, duration: number, thumbnail: string, channel: string}>}
+     * @returns {Promise<{title: string, duration: string, durationSeconds: number, thumbnail: string, channel: string}>}
      * A promise that resolves with an object containing the video's title, duration in seconds, thumbnail URL, and channel name
      */
-    async getVideoInfo(videoURL: string) {
-        if (!videoURL) throw new BadRequestException("Video URL is required");
+    async getVideoInfo(ytLink: string) {
+        if (!ytLink) throw new BadRequestException("Video URL is required");
         
-        if (!ytdl.validateURL(videoURL)) {
+        if (!ytLinkRegex.test(ytLink)) {
             throw new BadRequestException('Youtube url not invalid');
         }
-        let videoInfo = null; 
-        const options = (NODE_ENV === 'production') ? { agent: ytdl.createProxyAgent({ uri: process.env.YTDL_PROXY_AGENT }) } : {};
-
-        videoInfo = await ytdl.getInfo(videoURL, options);
+        let videoInfo: VideoInfo = await youtubeDl(ytLink, {
+            dumpSingleJson: true,
+            noCheckCertificates: true,
+            noWarnings: true,
+            preferFreeFormats: true,
+            youtubeSkipDashManifest: true,
+            cookies: "cookies.txt",
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+        });
         return {
-            title: videoInfo.videoDetails.title,
-            duration: this.formatLengthSeconds(parseInt(videoInfo.videoDetails.lengthSeconds)),
-            thumbnail: videoInfo.videoDetails.thumbnails[videoInfo.videoDetails.thumbnails.length - 1].url, // Get the highest resolution thumbnail
-            channel: videoInfo.videoDetails.author.name,
+            title: videoInfo.title,
+            duration: videoInfo.duration_string,
+            durationSeconds: videoInfo.duration_number,
+            thumbnail: videoInfo.thumbnail,
+            channel: videoInfo.channel,
         };
     }
 
@@ -67,16 +83,16 @@ export class AppService {
      *
      * @returns {Promise<void>} A promise that resolves when the clip is downloaded and sent to the client
      */
-    public async downloadClip(videoURL: string, start: number, duration: number, res: any) {
+    public async downloadClip(ytLink: string, start: number, duration: number, res: any) {
         const tempClipPath = path.join(this.tempDir, `temp_${Date.now()}.mp4`);
         let ffmpegCommand = null;
 
         // Basic validations
-        if (!videoURL || start === undefined || duration === undefined) {
+        if (!ytLink || start === undefined || duration === undefined) {
             throw new BadRequestException("Video URL, start time, and duration are required.");
         }
 
-        if (!ytdl.validateURL(videoURL)) {
+        if (!ytdl.validateURL(ytLink)) {
             throw new BadRequestException('Youtube url not invalid');
         }
 
@@ -93,7 +109,7 @@ export class AppService {
             const isProduction = NODE_ENV === 'production';
             const options = isProduction ? { agent: ytdl.createProxyAgent({ uri: process.env.YTDL_PROXY_AGENT }) } : {};
 
-            videoInfo = await ytdl.getInfo(videoURL, options);
+            videoInfo = await ytdl.getInfo(ytLink, options);
 
             const format = ytdl.chooseFormat(videoInfo.formats, {
                 quality: "highest",
@@ -105,7 +121,7 @@ export class AppService {
             }
 
             // Create video stream
-            const videoStream = ytdl(videoURL, {
+            const videoStream = ytdl(ytLink, {
                 format,
                 begin: startTime * 1000,
                 ...(isProduction && { agent: options.agent}) // Add proxy agent if in production
@@ -162,6 +178,11 @@ export class AppService {
             res.on("error", async (err) => {
                 console.error("Response error:", err);
                 await this.cleanup(ffmpegCommand, videoStream, clipStream, tempClipPath);
+            });
+
+            res.on("finish", () => {
+                console.log("Download finished, sending success response...");
+                res.json({ success: true });
             });
         } catch (err) {
             console.error("Download clip error:", err);
