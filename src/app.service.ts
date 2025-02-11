@@ -180,6 +180,11 @@ export class AppService {
                 console.error("Response error:", err);
                 await this.cleanup(ffmpegCommand, videoStream, clipStream, tempClipPath);
             });
+            
+            res.on("finish", () => {
+                console.log("Download finished, sending success response...");
+                res.json({ success: true });
+            });
         } catch (err) {
             console.error("Download clip error:", err);
             this.handleError(res);
