@@ -15,12 +15,6 @@ ffmpeg.setFfmpegPath(ffmpegPath); // Set the path to the FFmpeg executable
 
 
 
-const NODE_ENV = process.env.NODE_ENV;
-
-
-
-
-
 
 @Injectable()
 export class AppService {
