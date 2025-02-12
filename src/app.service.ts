@@ -8,17 +8,10 @@ import { VideoInfo, ytLinkRegex } from './utils';
 const youtubeDl = require('youtube-dl-exec');
 
 
-import { spawn } from "child_process";
 
 //import statement didn't work
 const ffmpegPath = require('ffmpeg-static');
 ffmpeg.setFfmpegPath(ffmpegPath); // Set the path to the FFmpeg executable
-
-
-
-const NODE_ENV = process.env.NODE_ENV;
-
-
 
 
 
@@ -47,21 +40,20 @@ export class AppService {
      * A promise that resolves with an object containing the video's title, duration in seconds, thumbnail URL, and channel name
      */
     async getVideoInfo(ytLink: string) {
-        if (!ytLink) throw new BadRequestException("Video URL is required");
+        if (!ytLink) throw new BadRequestException("Youtube video URL is required");
         
         if (!ytLinkRegex.test(ytLink)) {
-            throw new BadRequestException('Youtube url not invalid');
+            throw new BadRequestException('Youtube video is invalid');
         }
-        const cookiesPath = path.join(__dirname, '..', 'cookies.txt');
-        console.log(cookiesPath);
+        //const cookiesPath = path.join(__dirname, '..', 'cookies.txt');
         let videoInfo: VideoInfo = await youtubeDl(ytLink, {
             dumpSingleJson: true,
             noCheckCertificates: true,
             noWarnings: true,
             preferFreeFormats: true,
             youtubeSkipDashManifest: true,
-            cookies: cookiesPath,
-            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+            //cookies: cookiesPath,
+            //userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
         });
         return {
             title: videoInfo.title,
@@ -91,27 +83,25 @@ export class AppService {
 
         // Basic validations
         if (!ytLink || start === undefined || duration === undefined) {
-            throw new BadRequestException("Video URL, start time, and duration are required.");
+            throw new BadRequestException("Youtube video URL, start time, and duration are required.");
         }
 
-        if (!ytdl.validateURL(ytLink)) {
-            throw new BadRequestException('Youtube url not invalid');
+        if (!ytLinkRegex.test(ytLink)) {
+            throw new BadRequestException('Youtube video URL is invalid');
         }
 
         const startTime: number = Number(start);
         const durationTime: number = Number(duration) + 1; // Add 1 second to include the end of the clip
 
         if (isNaN(startTime) || isNaN(durationTime) || startTime < 0 || durationTime <= 1) {
-            throw new BadRequestException("Start and duration must be valid.");
+            throw new BadRequestException("Start time and duration are invalid.");
         }
 
         try {
             // Get video info
-            let videoInfo = null; 
-            const isProduction = NODE_ENV === 'production';
-            const options = isProduction ? { agent: ytdl.createProxyAgent({ uri: process.env.YTDL_PROXY_AGENT }) } : {};
+            let videoInfo = null;
 
-            videoInfo = await ytdl.getInfo(ytLink, options);
+            videoInfo = await ytdl.getInfo(ytLink);
 
             const format = ytdl.chooseFormat(videoInfo.formats, {
                 quality: "highest",
@@ -126,7 +116,6 @@ export class AppService {
             const videoStream = ytdl(ytLink, {
                 format,
                 begin: startTime * 1000,
-                ...(isProduction && { agent: options.agent}) // Add proxy agent if in production
             });
 
             // Process video with FFmpeg
@@ -136,8 +125,8 @@ export class AppService {
                     .seekInput(startTime)
                     .duration(durationTime)
                     .outputOptions([
-                        "-c:v copy",
-                        "-c:a copy",
+                        //"-c:v copy",
+                        //"-c:a copy",
                         "-avoid_negative_ts make_zero",
                         "-movflags +faststart",
                         "-y",
@@ -189,18 +178,6 @@ export class AppService {
         }
     }
 
-    /**
-     * Converts a duration from seconds to a string formatted as "minutes:seconds".
-     *
-     * @param lengthSeconds The duration in seconds to format.
-     * @returns A string representing the duration in "minutes:seconds" format.
-     */
-    private formatLengthSeconds(lengthSeconds: number): string {
-        const minutes = Math.floor(lengthSeconds / 60);
-        const seconds = lengthSeconds % 60;
-
-        return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
-    }
 
     /**
      * Ensures that the temporary directory exists by creating it if it does not.
