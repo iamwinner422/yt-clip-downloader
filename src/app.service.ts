@@ -8,7 +8,6 @@ import { VideoInfo, ytLinkRegex } from './utils';
 const youtubeDl = require('youtube-dl-exec');
 
 
-import { spawn } from "child_process";
 
 //import statement didn't work
 const ffmpegPath = require('ffmpeg-static');
@@ -52,16 +51,15 @@ export class AppService {
         if (!ytLinkRegex.test(ytLink)) {
             throw new BadRequestException('Youtube url not invalid');
         }
-        const cookiesPath = path.join(__dirname, '..', 'cookies.txt');
-        console.log(cookiesPath);
+        //const cookiesPath = path.join(__dirname, '..', 'cookies.txt');
         let videoInfo: VideoInfo = await youtubeDl(ytLink, {
             dumpSingleJson: true,
             noCheckCertificates: true,
             noWarnings: true,
             preferFreeFormats: true,
             youtubeSkipDashManifest: true,
-            cookies: cookiesPath,
-            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+            //cookies: cookiesPath,
+            //userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
         });
         return {
             title: videoInfo.title,
